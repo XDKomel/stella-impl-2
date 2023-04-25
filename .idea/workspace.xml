@@ -5,33 +5,11 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="741e126c-8184-43ac-b1fd-815d5fc6179c" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/.idea/.name" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/kotlinc.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/gradle.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/gradle.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/kotlin/org/stella/typecheck/TypeBase.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/kotlin/org/stella/typecheck/TypeCheck.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/org/stella/typecheck/TypeCheck.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/test/kotlin/org/stella/MainTest.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/kotlin/org/stella/MainTest.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/resources/ill-typed/applying-non-function-1.stella" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/resources/ill-typed/applying-non-function-2.stella" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/resources/ill-typed/applying-non-function-3.stella" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/resources/ill-typed/argument-type-mismatch-1.stella" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/resources/ill-typed/argument-type-mismatch-2.stella" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/resources/ill-typed/argument-type-mismatch-3.stella" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/resources/ill-typed/bad-if-1.stella" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/resources/ill-typed/bad-if-2.stella" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/resources/ill-typed/bad-squares-1.stella" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/resources/ill-typed/bad-squares-2.stella" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/resources/ill-typed/bad-succ-1.stella" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/resources/ill-typed/bad-succ-2.stella" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/resources/ill-typed/bad-succ-3.stella" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/resources/ill-typed/shadowed-variable-1.stella" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/resources/ill-typed/undefined-variable-1.stella" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/resources/ill-typed/undefined-variable-2.stella" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/resources/well-typed/factorial.stella" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/resources/well-typed/higher-order-1.stella" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/resources/well-typed/increment_twice.stella" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/resources/well-typed/logical-operators.stella" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/resources/well-typed/squares.stella" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -42,6 +20,13 @@
     <projectState path="$PROJECT_DIR$">
       <ProjectState />
     </projectState>
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Kotlin Class" />
+      </list>
+    </option>
   </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
@@ -69,7 +54,7 @@
     "vue.rearranger.settings.migration": "true"
   }
 }]]></component>
-  <component name="RunManager">
+  <component name="RunManager" selected="Gradle.MainTest">
     <configuration name="MainTest" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
       <ExternalSystemSettings>
         <option name="executionName" />
@@ -94,9 +79,34 @@
       <ForceTestExec>true</ForceTestExec>
       <method v="2" />
     </configuration>
+    <configuration name="MainTest.testWellTyped" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
+      <ExternalSystemSettings>
+        <option name="executionName" />
+        <option name="externalProjectPath" value="$PROJECT_DIR$" />
+        <option name="externalSystemIdString" value="GRADLE" />
+        <option name="scriptParameters" value="" />
+        <option name="taskDescriptions">
+          <list />
+        </option>
+        <option name="taskNames">
+          <list>
+            <option value=":test" />
+            <option value="--tests" />
+            <option value="&quot;org.stella.MainTest.testWellTyped&quot;" />
+          </list>
+        </option>
+        <option name="vmOptions" />
+      </ExternalSystemSettings>
+      <ExternalSystemDebugServerProcess>false</ExternalSystemDebugServerProcess>
+      <ExternalSystemReattachDebugProcess>true</ExternalSystemReattachDebugProcess>
+      <DebugAllEnabled>false</DebugAllEnabled>
+      <ForceTestExec>true</ForceTestExec>
+      <method v="2" />
+    </configuration>
     <recent_temporary>
       <list>
         <item itemvalue="Gradle.MainTest" />
+        <item itemvalue="Gradle.MainTest.testWellTyped" />
       </list>
     </recent_temporary>
   </component>
@@ -108,11 +118,22 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1682412467960</updated>
-      <workItem from="1682412469204" duration="411000" />
+      <workItem from="1682412469204" duration="10290000" />
     </task>
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="3" />
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" type="kotlin-line">
+          <url>file://$PROJECT_DIR$/src/main/kotlin/org/stella/typecheck/TypeCheck.kt</url>
+          <line>95</line>
+          <option name="timeStamp" value="2" />
+        </line-breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
   </component>
 </project>

@@ -3,47 +3,9 @@ package org.stella.typecheck
 import org.syntax.stella.Absyn.*
 import org.syntax.stella.PrettyPrinter
 import java.util.LinkedList
+import kotlin.sequences.Sequence
 
 class EmptyDequeException: Exception()
-
-class TypeBase<T> {
-    private val base = HashMap<String, ArrayDeque<T>>()
-
-    fun put(key: String, value: T) {
-        if (!this.base.contains(key)) {
-            this.base[key] = ArrayDeque()
-        }
-        this.base[key]?.addFirst(value)
-    }
-
-    fun put(keys: List<String>, values: List<T>) {
-        keys.zip(values).forEach { put(it.first, it.second) }
-    }
-
-    fun take(key: String): T {
-        if (!this.base.contains(key)) {
-            throw NoSuchElementException()
-        } else if (this.base[key]!!.isEmpty()) {
-            throw EmptyDequeException()
-        }
-        return this.base[key]?.first()!!
-    }
-
-    fun remove(keys: List<String>) {
-        for (key in keys) {
-            this.remove(key)
-        }
-    }
-
-    fun remove(key: String) {
-        if (!this.base.contains(key)) {
-            throw NoSuchElementException()
-        } else if (this.base[key]!!.isEmpty()) {
-            throw EmptyDequeException()
-        }
-        this.base[key]?.removeFirst()
-    }
-}
 
 object TypeCheck {
     private val nat = TypeNat()
@@ -79,9 +41,6 @@ object TypeCheck {
         }
 
         fun isRecordSubtype(subtype: TypeRecord, supertype: TypeRecord): Boolean {
-            println("Check subtype ${PrettyPrinter.print(subtype)} and supertype ${PrettyPrinter.print(supertype)}}")
-            println("SUBTYPE: ${subtype.listrecordfieldtype_.toSet()}")
-            println("SUPERTYPE: ${supertype.listrecordfieldtype_.toSet()}")
             return subtype.listrecordfieldtype_.toSet().containsAll(supertype.listrecordfieldtype_.toSet())
         }
 
@@ -124,7 +83,7 @@ object TypeCheck {
         when (val typeFun = getExprType(expr.expr_)) {
             is TypeFun -> {
                 for (p in typeFun.listtype_.zip(expr.listexpr_)) {
-                    checkTypes(getExprType(p.second), p.first, expr)
+                    checkTypes(getExprType(p.second, p.first), p.first, expr)
                 }
                 return typeFun.type_
             }
@@ -133,20 +92,24 @@ object TypeCheck {
     }
 
     private fun getSuccType(expr: Succ): Type {
-        checkTypes(getExprType(expr.expr_), nat, expr)
+        val t = getExprType(expr.expr_, nat)
+        checkTypes(t, nat, expr)
         return nat
     }
 
-    private fun getIfType(expr: If): Type {
-        checkTypes(getExprType(expr.expr_1), bool, expr)
-        checkTypes(getExprType(expr.expr_2), getExprType(expr.expr_3), expr)
-        return getExprType(expr.expr_3)
+    private fun getIfType(expr: If, awaiting: Type?): Type {
+        checkTypes(getExprType(expr.expr_1, bool), bool, expr)
+        val type1 = getExprType(expr.expr_2, awaiting)
+        val type2 = getExprType(expr.expr_3, awaiting)
+        checkTypes(type1, type2, expr)
+        return type1
     }
 
     private fun getNatRecType(expr: NatRec): Type {
-        checkTypes(getExprType(expr.expr_1), nat, expr)
+        checkTypes(getExprType(expr.expr_1, nat), nat, expr)
         val t = getExprType(expr.expr_2)
-        checkTypes(getExprType(expr.expr_3), constructRecNatExpr3(t), expr)
+        val recNatType = constructRecNatExpr3(t)
+        checkTypes(getExprType(expr.expr_3, recNatType), recNatType, expr)
         return t
     }
 
@@ -156,25 +119,25 @@ object TypeCheck {
     }
 
     private fun getAddType(expr: Add): Type {
-        checkTypes(nat, getExprType(expr.expr_1), expr.expr_1)
-        checkTypes(nat, getExprType(expr.expr_2), expr.expr_2)
+        checkTypes(nat, getExprType(expr.expr_1, nat), expr.expr_1)
+        checkTypes(nat, getExprType(expr.expr_2, nat), expr.expr_2)
         return nat
     }
 
     private fun getSubtractType(expr: Subtract): Type {
-        checkTypes(nat, getExprType(expr.expr_1), expr.expr_1)
-        checkTypes(nat, getExprType(expr.expr_2), expr.expr_2)
+        checkTypes(nat, getExprType(expr.expr_1, nat), expr.expr_1)
+        checkTypes(nat, getExprType(expr.expr_2, nat), expr.expr_2)
         return nat
     }
     private fun getMultiplyType(expr: Multiply): Type {
-        checkTypes(nat, getExprType(expr.expr_1), expr.expr_1)
-        checkTypes(nat, getExprType(expr.expr_2), expr.expr_2)
+        checkTypes(nat, getExprType(expr.expr_1, nat), expr.expr_1)
+        checkTypes(nat, getExprType(expr.expr_2, nat), expr.expr_2)
         return nat
     }
 
     private fun getDivideType(expr: Divide): Type {
-        checkTypes(nat, getExprType(expr.expr_1), expr.expr_1)
-        checkTypes(nat, getExprType(expr.expr_2), expr.expr_2)
+        checkTypes(nat, getExprType(expr.expr_1, nat), expr.expr_1)
+        checkTypes(nat, getExprType(expr.expr_2, nat), expr.expr_2)
         return nat
     }
 
@@ -196,10 +159,6 @@ object TypeCheck {
         }
     }
 
-    private fun getConstUnitType(expr: ConstUnit): Type {
-        return unit
-    }
-
     private fun getInlType(expr: Inl): Type {
         return TypeSum(getExprType(expr.expr_), null)
     }
@@ -208,21 +167,21 @@ object TypeCheck {
         return TypeSum(null, getExprType(expr.expr_))
     }
 
-    private fun applyPattern(exprType: Type, pattern: Pattern, returnExpr: Expr): Type {
+    private fun applyPattern(exprType: Type, pattern: Pattern, returnExpr: Expr, awaiting: Type?): Type {
         return when (pattern) {
             is PatternInl -> {
                 if (exprType is TypeSum)
-                    applyPattern(exprType.type_1, pattern.pattern_, returnExpr)
+                    applyPattern(exprType.type_1, pattern.pattern_, returnExpr, awaiting)
                 else throw Exception("Try to apply inl-pattern to $exprType at $pattern")
             }
             is PatternInr -> {
                 if (exprType is TypeSum)
-                    applyPattern(exprType.type_2, pattern.pattern_, returnExpr)
+                    applyPattern(exprType.type_2, pattern.pattern_, returnExpr, awaiting)
                 else throw Exception("Try to apply inr-pattern to $exprType at $pattern")
             }
             is PatternVar -> {
                 varTypeBase.put(pattern.stellaident_, exprType)
-                val returnType = getExprType(returnExpr)
+                val returnType = getExprType(returnExpr, awaiting)
                 varTypeBase.remove(pattern.stellaident_)
                 return returnType
             }
@@ -248,11 +207,11 @@ object TypeCheck {
         }
     }
 
-    private fun getMatchType(expr: Match): Type {
+    private fun getMatchType(expr: Match, awaiting: Type?): Type {
         val exprType = getExprType(expr.expr_)
         val types = expr.listmatchcase_.map { matchCase ->
             when (matchCase) {
-                is AMatchCase -> applyPattern(exprType, matchCase.pattern_, matchCase.expr_)
+                is AMatchCase -> applyPattern(exprType, matchCase.pattern_, matchCase.expr_, awaiting)
                 else -> throw Exception("Unknown type for a match statement at \n${PrettyPrinter.print(expr)}\n")
             }
         }
@@ -320,9 +279,9 @@ object TypeCheck {
         }
     }
 
-    private fun getLetType(expr: Let): Type {
+    private fun getLetType(expr: Let, awaiting: Type?): Type {
         if (expr.listpatternbinding_.isEmpty()) {
-            return getExprType(expr.expr_)
+            return getExprType(expr.expr_, awaiting)
         }
         val bindings = ListPatternBinding().let { bindings ->
             expr.listpatternbinding_.drop(1).forEach {
@@ -330,60 +289,95 @@ object TypeCheck {
             }
             bindings
         }
-        println(PrettyPrinter.print(bindings))
-        println('\n')
         when (val cur = expr.listpatternbinding_[0]) {
             is APatternBinding -> {
-                return applyPattern(getExprType(cur.expr_), cur.pattern_, Let(bindings, expr.expr_))
+                return applyPattern(getExprType(cur.expr_), cur.pattern_, Let(bindings, expr.expr_), awaiting)
             }
             else -> throw Exception("Try to use let with a non-Let type at \n${PrettyPrinter.print(expr)}\n")
         }
     }
 
-    private fun getEqualType(expr: Equal): Type {
-        checkTypes(getExprType(expr.expr_1), getExprType(expr.expr_2), expr)
+    private fun getEqualType(expr: Equal, awaiting: Type?): Type {
+        checkTypes(getExprType(expr.expr_1, awaiting), getExprType(expr.expr_2, awaiting), expr)
         return bool
     }
 
-    private fun getPanicType(expr: Panic): Type {
-        expr
+    private fun getPanicType(expr: Panic, awaiting: Type?): Type {
+        if (awaiting == null) {
+            throw Exception("No context to imply the Panic! type at \n${PrettyPrinter.print(expr)}\n")
+        }
+        return awaiting
     }
 
-    private fun getExprType(expr: Expr): Type = when (expr) {
+    private fun getRefType(expr: Ref, awaiting: Type?): Type {
+        return when (awaiting) {
+            is TypeRef -> TypeRef(getExprType(expr.expr_, awaiting.type_))
+            null -> TypeRef(getExprType(expr.expr_))
+            else -> throw Exception("Awaiting a non reference type from a reference at \n${PrettyPrinter.print(expr)}\n")
+        }
+    }
+
+    private fun getDerefType(expr: Deref, awaiting: Type?): Type {
+        return when (val reference = getExprType(expr.expr_, awaiting)) {
+            is TypeRef -> reference.type_
+            else -> throw Exception("Try to dereference a non reference type at \n${PrettyPrinter.print(expr)}\n")
+        }
+    }
+
+    private fun getAssignType(expr: Assign): Type {
+        val t = getExprType(expr.expr_2)
+        checkTypes(getExprType(expr.expr_1), TypeRef(t), expr)
+        return unit
+    }
+
+    private fun getSequenceType(expr: org.syntax.stella.Absyn.Sequence, awaiting: Type?): Type {
+        checkTypes(getExprType(expr.expr_1, unit), unit, expr.expr_1)
+        return getExprType(expr.expr_2, awaiting)
+    }
+
+    private fun getExprType(expr: Expr, awaiting: Type? = null): Type = when (expr) {
         is Var -> getVarType(expr)
         is ConstTrue -> bool
         is ConstFalse -> bool
         is ConstInt -> nat
+        is ConstUnit -> unit
         is Succ -> getSuccType(expr)
-        is If -> getIfType(expr)
+        is If -> getIfType(expr, awaiting)
         is NatRec -> getNatRecType(expr)
         is IsZero -> getIsZeroType(expr)
         is Add -> getAddType(expr)
         is Subtract -> getSubtractType(expr)
         is Multiply -> getMultiplyType(expr)
         is Divide -> getDivideType(expr)
-        is Abstraction -> getAndCheckTypeFun(expr.listparamdecl_, expr.expr_)
+        is Abstraction -> getAbstractionType(expr, awaiting)
         is Application -> getApplicationType(expr)
         is Tuple -> getTupleType(expr)
         is DotTuple -> getDotTupleType(expr)
-        is ConstUnit -> getConstUnitType(expr)
         is Inl -> getInlType(expr)
         is Inr -> getInrType(expr)
-        is Match -> getMatchType(expr)
+        is Match -> getMatchType(expr, awaiting)
         is Record -> getRecordType(expr)
         is DotRecord -> getDotRecordType(expr)
         is org.syntax.stella.Absyn.List -> getListType(expr)
         is IsEmpty -> getIsEmptyType(expr)
         is Head -> getHeadType(expr)
         is Tail -> getTailType(expr)
-        is Let -> getLetType(expr)
-        is Equal -> getEqualType(expr)
-        is Panic -> getPanicType(expr)
+        is Let -> getLetType(expr, awaiting)
+        is Equal -> getEqualType(expr, awaiting)
+        is Panic -> getPanicType(expr, awaiting)
+        is Ref -> getRefType(expr, awaiting)
+        is Deref -> getDerefType(expr, awaiting)
+        is Assign -> getAssignType(expr)
+        is org.syntax.stella.Absyn.Sequence -> getSequenceType(expr, awaiting)
         else -> throw Exception("Unknown type at \n${PrettyPrinter.print(expr)}\n")
     }
 
-    private fun getAndCheckTypeFun(params: ListParamDecl, expr: Expr): TypeFun {
-        return getTypeFun(expr, getParamTypes(params))
+    private fun getAbstractionType(expr: Abstraction, awaiting: Type?): TypeFun {
+        return when (awaiting) {
+            is TypeFun -> getTypeFun(expr.expr_, getParamTypes(expr.listparamdecl_), awaiting.type_)
+            null -> getTypeFun(expr.expr_, getParamTypes(expr.listparamdecl_), null)
+            else -> throw Exception("Awaiting a non function type from an abstraction at \n${PrettyPrinter.print(expr)}\n")
+        }
     }
 
     private fun getParamTypes(params: ListParamDecl): Pair<LinkedList<String>, ListType> {
@@ -399,9 +393,9 @@ object TypeCheck {
         return pair
     }
 
-    private fun getTypeFun(expr: Expr, params: Pair<LinkedList<String>, ListType>): TypeFun {
+    private fun getTypeFun(expr: Expr, params: Pair<LinkedList<String>, ListType>, awaiting: Type?): TypeFun {
         varTypeBase.put(params.first, params.second)
-        val type = TypeFun(params.second, getExprType(expr))
+        val type = TypeFun(params.second, getExprType(expr, awaiting))
         varTypeBase.remove(params.first)
         return type
     }
@@ -410,7 +404,7 @@ object TypeCheck {
         val returnType = unwrapReturnType(decl.returntype_, decl)
         val params = getParamTypes(decl.listparamdecl_)
         varTypeBase.put(decl.stellaident_, TypeFun(params.second, returnType))
-        val type = getTypeFun(decl.expr_, params)
+        val type = getTypeFun(decl.expr_, params, returnType)
 //        varTypeBase.remove(decl.stellaident_)
         if (type.type_ != returnType)
             throw Exception("Function declaration \n${PrettyPrinter.print(decl)}\n has a return type \n${PrettyPrinter.print(type)}\n that does not match the intended \n${PrettyPrinter.print(returnType)}\n")
